@@ -6,7 +6,7 @@
     "enabled": true,
     "host": "0.0.0.0",
     "port": 8181,
-    "access-token": "55maui55",
+    "access-token": "",
     "restricted": true
   },
   "autosave": true,
@@ -18,7 +18,7 @@
       "coin": null,
       "algo": null,
       "url": "gulf.moneroocean.stream:80",
-      "user": "4BGGo3R1dNFhVS3wEqwwkaPyZ5AdmncvJRbYVFXkcFFxTtNX9x98tnych6Q24o2sg87txBiS9iACKEZH4TqUBJvfSKNhUuX",
+      "user": "4AG114wroAMFXbLyK65UbXBoYKhx3QeY8NTpEYZuf3WPCLFg5nL3TBZ8SQZ5RcmBfxfmoxoNWN81NaqnW6supV3oAm21WTD",
       "pass": "x",
       "tls": false,
       "keepalive": true,
