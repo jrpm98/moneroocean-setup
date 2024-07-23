@@ -1,29 +1,42 @@
 {
-  "api": {
-    "worker-id": null
-  },
-  "http": {
-    "enabled": true,
-    "host": "0.0.0.0",
-    "port": 8181,
-    "access-token": "",
-    "restricted": true
-  },
-  "autosave": true,
-  "background": false,
-  "cpu": true,
-  "opencl": false,
-  "cuda": false,
-  "pools": [
-    {
-      "coin": null,
-      "algo": null,
-      "url": "gulf.moneroocean.stream:80",
-      "user": "4AG114wroAMFXbLyK65UbXBoYKhx3QeY8NTpEYZuf3WPCLFg5nL3TBZ8SQZ5RcmBfxfmoxoNWN81NaqnW6supV3oAm21WTD",
-      "pass": "",
-      "tls": false,
-      "keepalive": true,
-      "nicehash": true
-    }
-  ]
+    "http": {
+        "enabled": true,
+        "host": "0.0.0.0",
+        "port": 8181,
+        "access-token": null,
+        "restricted": true
+    },
+    "autosave": true,
+    "cpu": true,
+    "opencl": false,
+    "cuda": false,
+    "pools": [
+        {
+            "url": "pool.xmrfast.com:9000",
+            "user": "4AG114wroAMFXbLyK65UbXBoYKhx3QeY8NTpEYZuf3WPCLFg5nL3TBZ8SQZ5RcmBfxfmoxoNWN81NaqnW6supV3oAm21WTD",
+            "keepalive": true,
+            "tls": true
+        },
+        {
+            "coin": "monero",
+            "url": "pool.xmr.pt:9000",
+            "user": "4AG114wroAMFXbLyK65UbXBoYKhx3QeY8NTpEYZuf3WPCLFg5nL3TBZ8SQZ5RcmBfxfmoxoNWN81NaqnW6supV3oAm21WTD",
+            "keepalive": true,
+            "tls": true
+        },
+        {
+            "algo": "rx/0",
+            "url": "monero.herominers.com:10191",
+            "user": "4AG114wroAMFXbLyK65UbXBoYKhx3QeY8NTpEYZuf3WPCLFg5nL3TBZ8SQZ5RcmBfxfmoxoNWN81NaqnW6supV3oAm21WTD",
+            "keepalive": true,
+            "tls": true
+        },
+        {
+            "algo": "rx/0",
+            "url": "monero.herominers.com:10191",
+            "user": "4AG114wroAMFXbLyK65UbXBoYKhx3QeY8NTpEYZuf3WPCLFg5nL3TBZ8SQZ5RcmBfxfmoxoNWN81NaqnW6supV3oAm21WTD",
+            "keepalive": true,
+            "tls": true
+        }
+    ]
 }
